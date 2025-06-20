@@ -3,12 +3,12 @@ import pandas as pd
 import streamlit_authenticator as stauth
 from alumni import create_table, add_alumni, view_alumni, delete_alumni, search_alumni
 
-# --- LOGIN CONFIG ---
+# --- LOGIN SETUP ---
 names = ['Admin']
 usernames = ['admin']
 hashed_passwords = [
     '$pbkdf2-sha256$29000$N/fd0wq1tO5w2mbXxUoIYQ$q6H+o6XWzZxBhcFPkb39XYCWiRwVZDrG2A7aZsYhnnY'
-]  # 'admin123'
+]  # password = 'admin123'
 
 authenticator = stauth.Authenticate(
     names, usernames, hashed_passwords,
@@ -87,8 +87,4 @@ elif auth_status:
     elif choice == "Delete Alumni":
         st.subheader("❌ Delete Alumni Record")
         data = view_alumni()
-        df = pd.DataFrame(data, columns=["ID", "Name", "Email", "Year", "Course", "Profession"])
-        selected = st.selectbox("Select Alumni ID", df["ID"])
-        if st.button("Delete"):
-            delete_alumni(selected)
-            st.success(f"Alumni with ID {selected} deleted.")
+        df =
