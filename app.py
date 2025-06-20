@@ -9,10 +9,11 @@ if 'alumni_data' not in st.session_state:
     ])
 
 def main():
+    st.set_page_config(page_title="Alumni Management System", layout="centered")
     st.title("🎓 Alumni Management System")
 
     menu = ["Register Alumni", "View Alumni", "Search Alumni", "Filter Alumni"]
-    choice = st.sidebar.radio("Menu", menu)
+    choice = st.sidebar.radio("📋 Menu", menu)
 
     df = st.session_state.alumni_data
 
@@ -52,7 +53,7 @@ def main():
                 df["Name"].str.contains(search_term, case=False) |
                 df["Email"].str.contains(search_term, case=False)
             ]
-            st.dataframe(results if not results.empty else "No results found.")
+            st.dataframe(results if not results.empty else pd.DataFrame(columns=df.columns))
 
     # 4️⃣ Filter Alumni
     elif choice == "Filter Alumni":
