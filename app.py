@@ -1,37 +1,99 @@
 import streamlit as st
-from alumni import create_table, add_alumni, view_alumni
+import pandas as pd
+import streamlit_authenticator as stauth
+from alumni import create_table, add_alumni, view_alumni, delete_alumni, search_alumni
 
-st.set_page_config(page_title="Alumni Management System")
+# --- AUTHENTICATION SETUP ---
+names = ['Admin']
+usernames = ['admin']
+passwords = ['admin123']  # You can replace this with a hashed version
 
-create_table()
+hashed_passwords = stauth.Hasher(passwords).generate()
 
-st.title("🎓 Alumni Management System")
+authenticator = stauth.Authenticate(names, usernames, hashed_passwords, "alumni_app", "abcdef", cookie_expiry_days=1)
 
-menu = ["Add Alumni", "View Alumni"]
-choice = st.sidebar.selectbox("Menu", menu)
+name, auth_status, username = authenticator.login("Login", "main")
 
-if choice == "Add Alumni":
-    st.subheader("Add Alumni Details")
-    name = st.text_input("Full Name")
-    email = st.text_input("Email")
-    year = st.number_input("Graduation Year", min_value=1950, max_value=2100)
-    course = st.text_input("Course")
-    profession = st.text_input("Profession")
+if auth_status is False:
+    st.error("Incorrect username or password")
+elif auth_status is None:
+    st.warning("Please enter your credentials")
+elif auth_status:
 
-    if st.button("Submit"):
-        if name and email:
-            try:
-                add_alumni(name, email, year, course, profession)
-                st.success(f"Alumni '{name}' added successfully!")
-            except Exception as e:
-                st.error(f"Failed to add alumni: {e}")
-        else:
-            st.warning("Name and Email are required.")
+    # --- LOGGED IN ---
+    authenticator.logout("Logout", "sidebar")
+    st.sidebar.success(f"Welcome {name}")
 
-elif choice == "View Alumni":
-    st.subheader("Alumni Records")
-    data = view_alumni()
-    if data:
-        st.dataframe(data, use_container_width=True)
-    else:
-        st.info("No alumni records found.")
+    create_table()
+    st.title("🎓 Alumni Management System")
+
+    menu = ["Add Alumni", "View Alumni", "Search", "Delete Alumni"]
+    choice = st.sidebar.selectbox("Menu", menu)
+
+    # ADD
+    if choice == "Add Alumni":
+        st.subheader("Add Alumni Details")
+        name = st.text_input("Full Name")
+        email = st.text_input("Email")
+        year = st.number_input("Graduation Year", min_value=1950, max_value=2100)
+        course = st.text_input("Course")
+        profession = st.text_input("Profession")
+
+        if st.button("Submit"):
+            if name and email:
+                try:
+                    add_alumni(name, email, year, course, profession)
+                    st.success(f"Alumni '{name}' added successfully!")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+            else:
+                st.warning("Name and Email are required.")
+
+    # VIEW
+    elif choice == "View Alumni":
+        st.subheader("All Alumni Records")
+        data = view_alumni()
+        df = pd.DataFrame(data, columns=["ID", "Name", "Email", "Year", "Course", "Profession"])
+
+        # Filters
+        with st.expander("🔍 Filters"):
+            years = ["All"] + sorted(df["Year"].dropna().unique().tolist())
+            courses = ["All"] + sorted(df["Course"].dropna().unique())
+            professions = ["All"] + sorted(df["Profession"].dropna().unique())
+
+            selected_year = st.selectbox("Graduation Year", years)
+            selected_course = st.selectbox("Course", courses)
+            selected_profession = st.selectbox("Profession", professions)
+
+            if selected_year != "All":
+                df = df[df["Year"] == selected_year]
+            if selected_course != "All":
+                df = df[df["Course"] == selected_course]
+            if selected_profession != "All":
+                df = df[df["Profession"] == selected_profession]
+
+        st.dataframe(df, use_container_width=True)
+
+        # Download CSV
+        st.download_button("📁 Download CSV", df.to_csv(index=False), file_name="alumni.csv")
+
+    # SEARCH
+    elif choice == "Search":
+        st.subheader("🔎 Search Alumni by Name or Email")
+        keyword = st.text_input("Enter search keyword")
+        if st.button("Search"):
+            results = search_alumni(keyword)
+            if results:
+                st.dataframe(pd.DataFrame(results, columns=["ID", "Name", "Email", "Year", "Course", "Profession"]))
+            else:
+                st.warning("No results found.")
+
+    # DELETE
+    elif choice == "Delete Alumni":
+        st.subheader("❌ Delete Alumni Record")
+        data = view_alumni()
+        df = pd.DataFrame(data, columns=["ID", "Name", "Email", "Year", "Course", "Profession"])
+        selected = st.selectbox("Select Alumni ID", df["ID"])
+        if st.button("Delete"):
+            delete_alumni(selected)
+            st.success(f"Alumni with ID {selected} deleted.")
