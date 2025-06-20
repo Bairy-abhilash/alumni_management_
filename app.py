@@ -3,12 +3,12 @@ import pandas as pd
 import streamlit_authenticator as stauth
 from alumni import create_table, add_alumni, view_alumni, delete_alumni, search_alumni
 
-# --- AUTH SETUP ---
+# --- LOGIN CONFIG ---
 names = ['Admin']
 usernames = ['admin']
 hashed_passwords = [
-    '$pbkdf2-sha256$29000$N/fd0wq1tO5w2mbXxUoIYQ$q6H+o6XWzZxBhcFPkb39XYCWiRwVZDrG2A7aZsYhnnY'  # 'admin123'
-]
+    '$pbkdf2-sha256$29000$N/fd0wq1tO5w2mbXxUoIYQ$q6H+o6XWzZxBhcFPkb39XYCWiRwVZDrG2A7aZsYhnnY'
+]  # 'admin123'
 
 authenticator = stauth.Authenticate(
     names, usernames, hashed_passwords,
@@ -34,17 +34,17 @@ elif auth_status:
 
     if choice == "Add Alumni":
         st.subheader("Add Alumni Details")
-        name = st.text_input("Full Name")
+        full_name = st.text_input("Full Name")
         email = st.text_input("Email")
         year = st.number_input("Graduation Year", min_value=1950, max_value=2100)
         course = st.text_input("Course")
         profession = st.text_input("Profession")
 
         if st.button("Submit"):
-            if name and email:
+            if full_name and email:
                 try:
-                    add_alumni(name, email, year, course, profession)
-                    st.success(f"Alumni '{name}' added successfully!")
+                    add_alumni(full_name, email, year, course, profession)
+                    st.success(f"Alumni '{full_name}' added successfully!")
                 except Exception as e:
                     st.error(f"Error: {e}")
             else:
@@ -76,19 +76,19 @@ elif auth_status:
 
     elif choice == "Search":
         st.subheader("🔎 Search Alumni by Name or Email")
-        keyword = st.text_input("Enter keyword")
+        keyword = st.text_input("Enter search keyword")
         if st.button("Search"):
             results = search_alumni(keyword)
             if results:
                 st.dataframe(pd.DataFrame(results, columns=["ID", "Name", "Email", "Year", "Course", "Profession"]))
             else:
-                st.warning("No match found.")
+                st.warning("No results found.")
 
     elif choice == "Delete Alumni":
-        st.subheader("❌ Delete Alumni")
+        st.subheader("❌ Delete Alumni Record")
         data = view_alumni()
         df = pd.DataFrame(data, columns=["ID", "Name", "Email", "Year", "Course", "Profession"])
-        selected = st.selectbox("Select Alumni ID to delete", df["ID"])
+        selected = st.selectbox("Select Alumni ID", df["ID"])
         if st.button("Delete"):
             delete_alumni(selected)
             st.success(f"Alumni with ID {selected} deleted.")
