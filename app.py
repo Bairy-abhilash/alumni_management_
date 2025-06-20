@@ -3,12 +3,11 @@ import pandas as pd
 import streamlit_authenticator as stauth
 from alumni import create_table, add_alumni, view_alumni, delete_alumni, search_alumni
 
-# --- LOGIN SETUP ---
 names = ['Admin']
 usernames = ['admin']
 hashed_passwords = [
     '$pbkdf2-sha256$29000$N/fd0wq1tO5w2mbXxUoIYQ$q6H+o6XWzZxBhcFPkb39XYCWiRwVZDrG2A7aZsYhnnY'
-]  # password = 'admin123'
+]  # password is admin123
 
 authenticator = stauth.Authenticate(
     names, usernames, hashed_passwords,
