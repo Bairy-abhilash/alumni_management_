@@ -22,7 +22,10 @@ def main():
         st.subheader("📝 Register New Alumni")
         name = st.text_input("Full Name")
         email = st.text_input("Email")
-        year = st.selectbox("Year of Graduation", list(range(1980, datetime.datetime.now().year + 1)))
+        year = st.selectbox(
+            "Year of Graduation",
+            list(range(1980, datetime.datetime.now().year + 6))  # allows future years
+        )
         branch = st.selectbox("Branch", ["CSE", "ECE", "EEE", "ME", "CE", "Other"])
 
         if st.button("Register"):
