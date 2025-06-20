@@ -6,7 +6,7 @@ from alumni import create_table, add_alumni, view_alumni, delete_alumni, search_
 # --- AUTHENTICATION SETUP ---
 names = ['Admin']
 usernames = ['admin']
-passwords = ['admin123']  # You can replace this with a hashed version
+passwords = ['admin123']
 
 hashed_passwords = stauth.Hasher(passwords).generate()
 
@@ -20,7 +20,6 @@ elif auth_status is None:
     st.warning("Please enter your credentials")
 elif auth_status:
 
-    # --- LOGGED IN ---
     authenticator.logout("Logout", "sidebar")
     st.sidebar.success(f"Welcome {name}")
 
