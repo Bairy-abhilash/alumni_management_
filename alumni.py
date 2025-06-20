@@ -1,3 +1,9 @@
+
+---
+
+## 📄 `alumni.py`
+
+```python
 import sqlite3
 
 DB_NAME = "alumni.db"
@@ -38,3 +44,21 @@ def view_alumni():
     data = cursor.fetchall()
     conn.close()
     return data
+
+def search_alumni(keyword):
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT * FROM alumni
+        WHERE name LIKE ? OR email LIKE ?
+    """, (f'%{keyword}%', f'%{keyword}%'))
+    data = cursor.fetchall()
+    conn.close()
+    return data
+
+def delete_alumni(alumni_id):
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM alumni WHERE id = ?", (alumni_id,))
+    conn.commit()
+    conn.close()
