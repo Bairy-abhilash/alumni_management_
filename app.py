@@ -1,94 +1,81 @@
 import streamlit as st
 import pandas as pd
-import streamlit_authenticator as stauth
-from alumni import create_table, add_alumni, view_alumni, delete_alumni, search_alumni
+import datetime
 
-names = ['Admin']
-usernames = ['admin']
-hashed_passwords = [
-    '$pbkdf2-sha256$29000$N/fd0wq1tO5w2mbXxUoIYQ$q6H+o6XWzZxBhcFPkb39XYCWiRwVZDrG2A7aZsYhnnY'
-]  # password is admin123
+# Initialize session state for alumni data (resets on refresh)
+if 'alumni_data' not in st.session_state:
+    st.session_state.alumni_data = pd.DataFrame(columns=[
+        "Name", "Email", "Year", "Branch", "Registration Date"
+    ])
 
-authenticator = stauth.Authenticate(
-    names, usernames, hashed_passwords,
-    "alumni_app", "abcdef", cookie_expiry_days=1
-)
-
-name, auth_status, username = authenticator.login("Login", "main")
-
-if auth_status is False:
-    st.error("Incorrect username or password")
-elif auth_status is None:
-    st.warning("Please enter your credentials")
-elif auth_status:
-
-    authenticator.logout("Logout", "sidebar")
-    st.sidebar.success(f"Welcome {name}")
-
-    create_table()
+def main():
     st.title("🎓 Alumni Management System")
 
-    menu = ["Add Alumni", "View Alumni", "Search", "Delete Alumni"]
-    choice = st.sidebar.selectbox("Menu", menu)
+    menu = ["Register Alumni", "View Alumni", "Search Alumni", "Filter Alumni"]
+    choice = st.sidebar.radio("Menu", menu)
 
-    if choice == "Add Alumni":
-        st.subheader("Add Alumni Details")
-        full_name = st.text_input("Full Name")
+    df = st.session_state.alumni_data
+
+    # 1️⃣ Register Alumni
+    if choice == "Register Alumni":
+        st.subheader("📝 Register New Alumni")
+        name = st.text_input("Full Name")
         email = st.text_input("Email")
-        year = st.number_input("Graduation Year", min_value=1950, max_value=2100)
-        course = st.text_input("Course")
-        profession = st.text_input("Profession")
+        year = st.selectbox("Year of Graduation", list(range(1980, datetime.datetime.now().year + 1)))
+        branch = st.selectbox("Branch", ["CSE", "ECE", "EEE", "ME", "CE", "Other"])
 
-        if st.button("Submit"):
-            if full_name and email:
-                try:
-                    add_alumni(full_name, email, year, course, profession)
-                    st.success(f"Alumni '{full_name}' added successfully!")
-                except Exception as e:
-                    st.error(f"Error: {e}")
-            else:
-                st.warning("Name and Email are required.")
+        if st.button("Register"):
+            new_entry = {
+                "Name": name,
+                "Email": email,
+                "Year": year,
+                "Branch": branch,
+                "Registration Date": datetime.date.today()
+            }
+            st.session_state.alumni_data = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
+            st.success("✅ Alumni Registered!")
 
+    # 2️⃣ View Alumni
     elif choice == "View Alumni":
-        st.subheader("All Alumni Records")
-        data = view_alumni()
-        df = pd.DataFrame(data, columns=["ID", "Name", "Email", "Year", "Course", "Profession"])
+        st.subheader("📋 All Registered Alumni")
+        if df.empty:
+            st.info("No alumni registered yet.")
+        else:
+            st.dataframe(df)
 
-        with st.expander("🔍 Filters"):
-            years = ["All"] + sorted(df["Year"].dropna().unique().tolist())
-            courses = ["All"] + sorted(df["Course"].dropna().unique())
-            professions = ["All"] + sorted(df["Profession"].dropna().unique())
+    # 3️⃣ Search Alumni
+    elif choice == "Search Alumni":
+        st.subheader("🔍 Search Alumni by Name or Email")
+        search_term = st.text_input("Enter name or email to search")
+        if search_term:
+            results = df[
+                df["Name"].str.contains(search_term, case=False) |
+                df["Email"].str.contains(search_term, case=False)
+            ]
+            st.dataframe(results if not results.empty else "No results found.")
 
-            selected_year = st.selectbox("Graduation Year", years)
-            selected_course = st.selectbox("Course", courses)
-            selected_profession = st.selectbox("Profession", professions)
+    # 4️⃣ Filter Alumni
+    elif choice == "Filter Alumni":
+        st.subheader("🎯 Filter Alumni by Year and Branch")
 
-            if selected_year != "All":
-                df = df[df["Year"] == selected_year]
-            if selected_course != "All":
-                df = df[df["Course"] == selected_course]
-            if selected_profession != "All":
-                df = df[df["Profession"] == selected_profession]
+        year_options = ["All"] + sorted(df["Year"].dropna().unique().astype(str).tolist())
+        branch_options = ["All"] + sorted(df["Branch"].dropna().unique().tolist())
 
-        st.dataframe(df, use_container_width=True)
-        st.download_button("📁 Download CSV", df.to_csv(index=False), file_name="alumni.csv")
+        selected_year = st.selectbox("Select Year", year_options)
+        selected_branch = st.selectbox("Select Branch", branch_options)
 
-    elif choice == "Search":
-        st.subheader("🔎 Search Alumni by Name or Email")
-        keyword = st.text_input("Enter search keyword")
-        if st.button("Search"):
-            results = search_alumni(keyword)
-            if results:
-                df = pd.DataFrame(results, columns=["ID", "Name", "Email", "Year", "Course", "Profession"])
-                st.dataframe(df)
-            else:
-                st.warning("No results found.")
+        filtered_df = df.copy()
 
-    elif choice == "Delete Alumni":
-        st.subheader("❌ Delete Alumni Record")
-        data = view_alumni()
-        df = pd.DataFrame(data, columns=["ID", "Name", "Email", "Year", "Course", "Profession"])
-        selected = st.selectbox("Select Alumni ID", df["ID"])
-        if st.button("Delete"):
-            delete_alumni(selected)
-            st.success(f"Alumni with ID {selected} deleted.")
+        if selected_year != "All":
+            filtered_df = filtered_df[filtered_df["Year"] == int(selected_year)]
+
+        if selected_branch != "All":
+            filtered_df = filtered_df[filtered_df["Branch"] == selected_branch]
+
+        if filtered_df.empty:
+            st.warning("No alumni found for the selected filters.")
+        else:
+            st.dataframe(filtered_df)
+
+if __name__ == "__main__":
+    main()
