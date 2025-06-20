@@ -3,14 +3,17 @@ import pandas as pd
 import streamlit_authenticator as stauth
 from alumni import create_table, add_alumni, view_alumni, delete_alumni, search_alumni
 
-# --- AUTHENTICATION SETUP ---
+# --- AUTH SETUP ---
 names = ['Admin']
 usernames = ['admin']
-passwords = ['admin123']
+hashed_passwords = [
+    '$pbkdf2-sha256$29000$N/fd0wq1tO5w2mbXxUoIYQ$q6H+o6XWzZxBhcFPkb39XYCWiRwVZDrG2A7aZsYhnnY'  # 'admin123'
+]
 
-hashed_passwords = stauth.Hasher(passwords).generate()
-
-authenticator = stauth.Authenticate(names, usernames, hashed_passwords, "alumni_app", "abcdef", cookie_expiry_days=1)
+authenticator = stauth.Authenticate(
+    names, usernames, hashed_passwords,
+    "alumni_app", "abcdef", cookie_expiry_days=1
+)
 
 name, auth_status, username = authenticator.login("Login", "main")
 
@@ -29,7 +32,6 @@ elif auth_status:
     menu = ["Add Alumni", "View Alumni", "Search", "Delete Alumni"]
     choice = st.sidebar.selectbox("Menu", menu)
 
-    # ADD
     if choice == "Add Alumni":
         st.subheader("Add Alumni Details")
         name = st.text_input("Full Name")
@@ -48,13 +50,11 @@ elif auth_status:
             else:
                 st.warning("Name and Email are required.")
 
-    # VIEW
     elif choice == "View Alumni":
         st.subheader("All Alumni Records")
         data = view_alumni()
         df = pd.DataFrame(data, columns=["ID", "Name", "Email", "Year", "Course", "Profession"])
 
-        # Filters
         with st.expander("🔍 Filters"):
             years = ["All"] + sorted(df["Year"].dropna().unique().tolist())
             courses = ["All"] + sorted(df["Course"].dropna().unique())
@@ -72,27 +72,23 @@ elif auth_status:
                 df = df[df["Profession"] == selected_profession]
 
         st.dataframe(df, use_container_width=True)
-
-        # Download CSV
         st.download_button("📁 Download CSV", df.to_csv(index=False), file_name="alumni.csv")
 
-    # SEARCH
     elif choice == "Search":
         st.subheader("🔎 Search Alumni by Name or Email")
-        keyword = st.text_input("Enter search keyword")
+        keyword = st.text_input("Enter keyword")
         if st.button("Search"):
             results = search_alumni(keyword)
             if results:
                 st.dataframe(pd.DataFrame(results, columns=["ID", "Name", "Email", "Year", "Course", "Profession"]))
             else:
-                st.warning("No results found.")
+                st.warning("No match found.")
 
-    # DELETE
     elif choice == "Delete Alumni":
-        st.subheader("❌ Delete Alumni Record")
+        st.subheader("❌ Delete Alumni")
         data = view_alumni()
         df = pd.DataFrame(data, columns=["ID", "Name", "Email", "Year", "Course", "Profession"])
-        selected = st.selectbox("Select Alumni ID", df["ID"])
+        selected = st.selectbox("Select Alumni ID to delete", df["ID"])
         if st.button("Delete"):
             delete_alumni(selected)
             st.success(f"Alumni with ID {selected} deleted.")
