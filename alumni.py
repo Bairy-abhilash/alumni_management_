@@ -1,9 +1,3 @@
-
----
-
-## 📄 `alumni.py`
-
-```python
 import sqlite3
 
 DB_NAME = "alumni.db"
