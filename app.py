@@ -80,11 +80,16 @@ elif auth_status:
         if st.button("Search"):
             results = search_alumni(keyword)
             if results:
-                st.dataframe(pd.DataFrame(results, columns=["ID", "Name", "Email", "Year", "Course", "Profession"]))
+                df = pd.DataFrame(results, columns=["ID", "Name", "Email", "Year", "Course", "Profession"])
+                st.dataframe(df)
             else:
                 st.warning("No results found.")
 
     elif choice == "Delete Alumni":
         st.subheader("❌ Delete Alumni Record")
         data = view_alumni()
-        df =
+        df = pd.DataFrame(data, columns=["ID", "Name", "Email", "Year", "Course", "Profession"])
+        selected = st.selectbox("Select Alumni ID", df["ID"])
+        if st.button("Delete"):
+            delete_alumni(selected)
+            st.success(f"Alumni with ID {selected} deleted.")
